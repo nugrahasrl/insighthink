@@ -1,0 +1,20 @@
+datasource db {
+  provider = "mongodb"
+  url      = "mongodb+srv://nugrahasyahrul856:secr3t@cluster0.sew5w.mongodb.net/insighthink"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Users {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  email        String   @unique
+  username     String   @default("")
+  passwordHash String
+  firstName    String?  // Optional - remove '?' if you want it required
+  lastName     String?  // Optional - remove '?' if you want it required
+  avatar       String?  // Optional avatar URL field
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
