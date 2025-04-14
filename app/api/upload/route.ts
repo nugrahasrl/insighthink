@@ -10,7 +10,7 @@ import { Buffer } from "buffer";
 //   },
 // };
 // Use the new config keys (if needed)
-export const runtime = "nodejs";
+// export const runtime = "nodejs";
 export const revalidate = 0;
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/insighthink";
