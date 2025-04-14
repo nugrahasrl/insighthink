@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
 
-export const runtime = "node";
+export const runtime = "nodejs";
 export const revalidate = 0;
 
 interface ArticleDoc {

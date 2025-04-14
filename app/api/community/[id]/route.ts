@@ -45,7 +45,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const client = await clientPromise;
-    const db = client.db('your-database-name'); // Ganti dengan nama database Anda
+    const db = client.db('insighthink'); // Ganti dengan nama database Anda
     const result = await db.collection('CommunityPosts').deleteOne({ _id: new ObjectId(params.id) });
     
     if (result.deletedCount === 0) {
