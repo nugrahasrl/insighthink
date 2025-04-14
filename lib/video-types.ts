@@ -14,9 +14,15 @@ export interface VideoData {
   thumbnailUrl?: string;
   createdAt?: string;
   updatedAt?: string;
+  summary: string | string[];
+  views?: number; // Added views property
+  likes?: number; // Added likes property
 }
 
 export interface VideoAPIResponse {
   videos: VideoData[];
   totalPages: number;
+  total: number; // Added total property
+  page: number; // Added page property
+  perPage: number; // Added perPage property
 }

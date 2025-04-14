@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   try {
     // Get the session to check if the user is logged in.
     const session = await getServerSession(authOptions);
-    if (!session || !session.user || !(session.user as any).id) {
+    if (!session || typeof session !== "object" || !("user" in session) || !(session.user as { id: string }).id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const userId = (session.user as { id: string }).id;
@@ -58,8 +58,8 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     // Check that the user is authenticated.
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user || !(session.user as any).id) {
+    const session = await getServerSession(authOptions) as { user?: { id?: string } };
+    if (!session || !session.user || !session.user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const userId = (session.user as { id: string }).id;

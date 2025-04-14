@@ -82,7 +82,7 @@ const authOptions = {
           : "next-auth.session-token",
       options: {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "lax" as "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
       },

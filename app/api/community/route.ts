@@ -47,7 +47,7 @@ export async function GET(request: Request) {
 // POST handler with authentication for creating new posts
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session: { user?: { id?: string; name?: string } } | null = await getServerSession(authOptions);
     
     if (!session || !session.user) {
       return NextResponse.json(

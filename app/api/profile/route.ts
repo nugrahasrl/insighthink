@@ -42,6 +42,10 @@ export async function PUT(request: Request) {
     // Fetch the updated user to return
     const updatedUser = await db.collection("Users").findOne({ _id: new ObjectId(data.id) })
 
+    if (!updatedUser) {
+      return NextResponse.json({ message: "User not found after update" }, { status: 404 })
+    }
+
     return NextResponse.json(
       {
         message: "Profile updated successfully",
@@ -57,7 +61,8 @@ export async function PUT(request: Request) {
     )
   } catch (error) {
     console.error("Error updating profile:", error)
-    return NextResponse.json({ message: "Internal server error", error: error.message }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    return NextResponse.json({ message: "Internal server error", error: errorMessage }, { status: 500 })
   }
 }
 

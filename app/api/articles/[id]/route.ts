@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
 
 export const runtime = "nodejs";
@@ -70,7 +70,7 @@ export async function PATCH(
       { $set: updateData },
       { returnDocument: "after" }
     );
-    let updatedArticle = result.value;
+    let updatedArticle = result?.value as ArticleDoc | null;
     if (!updatedArticle) {
       // Fallback: Lakukan query ulang jika findOneAndUpdate tidak mengembalikan dokumen
       updatedArticle = await db.collection<ArticleDoc>("articles").findOne({ _id: new ObjectId(id) });

@@ -148,6 +148,7 @@ export async function GET() {
       total,
       page: 1,
       perPage: total,
+      totalPages: 0
     };
     return NextResponse.json(response, { status: 200 });
   } catch (error: any) {
