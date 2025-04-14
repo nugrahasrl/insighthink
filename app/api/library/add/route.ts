@@ -5,7 +5,6 @@ import { Buffer } from "buffer"
 import clientPromise from "@/lib/mongodb"
 
 // Configure the route to run on Node.js
-// export const runtime = "nodejs"
 export const revalidate = 0
 
 // Define allowed image MIME types

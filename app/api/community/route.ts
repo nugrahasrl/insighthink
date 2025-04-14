@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
 
-export const runtime = "nodejs";
 export const revalidate = 0;
 
 // GET handler for fetching posts with pagination

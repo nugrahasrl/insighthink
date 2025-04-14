@@ -25,7 +25,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   try {
     const body = await request.json();
     const client = await clientPromise;
-    const db = client.db('your-database-name'); // Ganti dengan nama database Anda
+    const db = client.db('insighthink'); // Ganti dengan nama database Anda
     const result = await db.collection('CommunityPosts').updateOne(
       { _id: new ObjectId(params.id) },
       { $set: body }

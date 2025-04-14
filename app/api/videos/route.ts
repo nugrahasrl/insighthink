@@ -11,7 +11,6 @@ export const config = {
   api: {
     bodyParser: false,
   },
-  // runtime: "nodejs",
   revalidate: 0,
 };
 
