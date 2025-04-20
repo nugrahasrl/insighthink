@@ -18,29 +18,20 @@ import { BookOpen, FileEdit, BookText, Plus, Trash2, FileImage, Save, X, FilePlu
 import dynamic from "next/dynamic"
 import { cn } from "@/lib/utils"
 
-import "react-quill/dist/quill.snow.css"
-
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false })
-
-const quillModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ["bold", "italic", "underline", "strike"],
-    [{ list: "ordered" }, { list: "bullet" }],
-    ["link", "image"],
-    ["clean"],
-  ],
-}
+// Dynamically import TextEditor to avoid SSR issues
+const TextEditor = dynamic(() => import("@/components/editor-js"), { ssr: false })
 
 const chapterSchema = z.object({
   title: z.string().min(1, "Chapter title is required"),
-  content: z.string().min(1, "Chapter content is required"),
+  content: z.object({ blocks: z.array(z.any()) }).refine((data) => data.blocks.length > 0, {
+    message: "Chapter content is required",
+  }), // Adjusted for EditorJS
 })
 
 const bookSchema = z.object({
   title: z.string().min(1, "Title is required"),
   author: z.string().min(1, "Author is required"),
-  description: z.string().min(1, "Description is required"),
+  description: z.any().optional(), // Changed to any for EditorJS
   content: z.string().optional(),
   chapters: z.array(chapterSchema),
   keyTerms: z.array(
@@ -79,33 +70,56 @@ export function EditBookForm({ defaultValues, onSubmit, isSubmitting }: EditBook
   // Initialize form with default values
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookSchema),
-    defaultValues,
+    defaultValues: {
+      ...defaultValues,
+      // Ensure description and chapter content are in EditorJS format
+      description:
+        defaultValues.description && typeof defaultValues.description === "string"
+          ? { blocks: [{ type: "paragraph", data: { text: defaultValues.description } }] }
+          : defaultValues.description || { blocks: [] },
+      chapters:
+        defaultValues.chapters?.map((chapter) => ({
+          ...chapter,
+          content:
+            chapter.content && typeof chapter.content === "string"
+              ? { blocks: [{ type: "paragraph", data: { text: chapter.content } }] }
+              : chapter.content || { blocks: [] },
+        })) || [],
+    },
   })
 
   // Set up field arrays for chapters and key terms
-  const { fields: chapterFields, append: appendChapter, remove: removeChapter } = useFieldArray({
+  const {
+    fields: chapterFields,
+    append: appendChapter,
+    remove: removeChapter,
+  } = useFieldArray({
     name: "chapters",
     control: form.control,
   })
 
-  const { fields: keyTermFields, append: appendKeyTerm, remove: removeKeyTerm } = useFieldArray({
+  const {
+    fields: keyTermFields,
+    append: appendKeyTerm,
+    remove: removeKeyTerm,
+  } = useFieldArray({
     name: "keyTerms",
     control: form.control,
   })
 
-  // Ensure component has rendered on client for ReactQuill
+  // Ensure component has rendered on client
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Inisialisasi preview dari defaultValues.coverImageUrl saat form pertama kali dimuat
+  // Initialize preview from defaultValues.coverImageUrl when form first loads
   useEffect(() => {
-    if (defaultValues.coverImageUrl) {
-      setCoverImagePreview(defaultValues.coverImageUrl)
+    if (defaultValues.coverImage) {
+      setCoverImagePreview(defaultValues.coverImage)
     }
-  }, [defaultValues.coverImageUrl])
+  }, [defaultValues.coverImage])
 
-  // Handle file input change untuk cover image
+  // Handle file input change for cover image
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -180,15 +194,9 @@ export function EditBookForm({ defaultValues, onSubmit, isSubmitting }: EditBook
                     <FormItem>
                       <FormLabel className="text-base">Genres</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Fiction, Fantasy, Science Fiction, etc."
-                          {...field}
-                          className="h-10"
-                        />
+                        <Input placeholder="Fiction, Fantasy, Science Fiction, etc." {...field} className="h-10" />
                       </FormControl>
-                      <FormDescription className="text-xs">
-                        Pisahkan tiap genre dengan tanda koma.
-                      </FormDescription>
+                      <FormDescription className="text-xs">Separate each genre with a comma.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -251,7 +259,7 @@ export function EditBookForm({ defaultValues, onSubmit, isSubmitting }: EditBook
             </div>
           </TabsContent>
 
-          {/* Konten Tab */}
+          {/* Content Tab */}
           <TabsContent value="content" className="space-y-6">
             <div className="space-y-6">
               <FormField
@@ -264,20 +272,15 @@ export function EditBookForm({ defaultValues, onSubmit, isSubmitting }: EditBook
                     </FormLabel>
                     <FormControl>
                       {mounted && (
-                        <div className="border rounded-md">
-                          <ReactQuill
-                            theme="snow"
-                            modules={quillModules}
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Write your book description..."
-                            className="min-h-[200px]"
-                          />
-                        </div>
+                        <TextEditor
+                          data={field.value}
+                          onChange={field.onChange}
+                          placeholder="Write your book description..."
+                        />
                       )}
                     </FormControl>
                     <FormDescription className="text-xs mt-2">
-                      Use the formatting toolbar to style your description
+                      Use the formatting tools to style your description
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -321,7 +324,7 @@ export function EditBookForm({ defaultValues, onSubmit, isSubmitting }: EditBook
                         const newIndex = chapterFields.length
                         appendChapter({
                           title: `Chapter ${newIndex + 1}`,
-                          content: "",
+                          content: { blocks: [] },
                         })
                         setActiveChapter(newIndex.toString())
                       }}
@@ -338,7 +341,7 @@ export function EditBookForm({ defaultValues, onSubmit, isSubmitting }: EditBook
                     type="single"
                     collapsible
                     className="w-full"
-                    value={activeChapter}
+                    value={activeChapter ?? ""}
                     onValueChange={setActiveChapter}
                   >
                     {chapterFields.map((field, index) => (
@@ -396,20 +399,15 @@ export function EditBookForm({ defaultValues, onSubmit, isSubmitting }: EditBook
                                 </FormLabel>
                                 <FormControl>
                                   {mounted && (
-                                    <div className="border rounded-md">
-                                      <ReactQuill
-                                        theme="snow"
-                                        modules={quillModules}
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        placeholder="Enter chapter content"
-                                        className="min-h-[200px]"
-                                      />
-                                    </div>
+                                    <TextEditor
+                                      data={field.value}
+                                      onChange={field.onChange}
+                                      placeholder="Enter chapter content"
+                                    />
                                   )}
                                 </FormControl>
                                 <FormDescription className="text-xs">
-                                  Use the formatting toolbar to style your chapter content
+                                  Use the formatting tools to style your chapter content
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
@@ -421,7 +419,7 @@ export function EditBookForm({ defaultValues, onSubmit, isSubmitting }: EditBook
                   </Accordion>
 
                   {chapterFields.length === 0 && (
-                    <Alert variant="outline" className="bg-muted/30">
+                    <Alert variant="default" className="bg-muted/30">
                       <AlertDescription className="text-center py-4">
                         No chapters added yet. Click the "Add Chapter" button to create your first chapter.
                       </AlertDescription>
@@ -503,7 +501,7 @@ export function EditBookForm({ defaultValues, onSubmit, isSubmitting }: EditBook
                     ))}
 
                     {keyTermFields.length === 0 && (
-                      <Alert variant="outline" className="bg-muted/30">
+                      <Alert variant="default" className="bg-muted/30">
                         <AlertDescription className="text-center py-4">
                           No key terms added yet. Click the "Add Term" button to create your first key term.
                         </AlertDescription>

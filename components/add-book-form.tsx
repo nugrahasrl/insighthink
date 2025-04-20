@@ -19,36 +19,20 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { cn } from "@/lib/utils"
 import dynamic from "next/dynamic"
 
-// Import Quill CSS for proper toolbar & icon display
-import "react-quill/dist/quill.snow.css"
-
-// Dynamically import ReactQuill to avoid SSR issues
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false })
-
-// Quill modules for toolbar configuration
-const quillModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ["bold", "italic", "underline", "strike"],
-    [{ list: "ordered" }, { list: "bullet" }],
-    ["link", "image"],
-    ["clean"],
-  ],
-}
-
-const quillFormats = ["header", "bold", "italic", "underline", "strike", "list", "bullet", "link", "image"]
+// Dynamically import TextEditor to avoid SSR issues
+const TextEditor = dynamic(() => import("@/components/editor-js"), { ssr: false })
 
 // Define the form schema with Zod
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   author: z.string().min(1, "Author is required"),
-  description: z.string().optional(),
+  description: z.any().optional(), // Changed to any to accommodate EditorJS data
   coverImage: z.any().optional(),
   chapters: z
     .array(
       z.object({
         title: z.string().min(1, "Chapter title is required"),
-        content: z.string().optional(),
+        content: z.any().optional(), // Changed to any to accommodate EditorJS data
       }),
     )
     .optional(),
@@ -79,7 +63,7 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
   const [activeChapter, setActiveChapter] = useState<string | null>("0")
   const [mounted, setMounted] = useState(false)
 
-  // Ensure component has rendered on client for ReactQuill
+  // Ensure component has rendered on client
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -90,8 +74,8 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
     defaultValues: {
       title: "",
       author: "",
-      description: "",
-      chapters: [{ title: "Chapter 1", content: "" }],
+      description: { blocks: [] },
+      chapters: [{ title: "Chapter 1", content: { blocks: [] } }],
       keyTerms: [{ term: "", definition: "" }],
       pageCount: "",
       readingTime: "",
@@ -269,23 +253,17 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                     <FormLabel className="text-base">Book Description</FormLabel>
                     <FormControl>
                       {mounted ? (
-                        <div className="border rounded-md">
-                          <ReactQuill
-                            theme="snow"
-                            modules={quillModules}
-                            formats={quillFormats}
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Write your book description..."
-                            className="min-h-[200px]"
-                          />
-                        </div>
+                        <TextEditor
+                          data={field.value}
+                          onChange={field.onChange}
+                          placeholder="Write your book description..."
+                        />
                       ) : (
                         <Textarea placeholder="Loading editor..." className="min-h-[200px] resize-y" disabled />
                       )}
                     </FormControl>
                     <FormDescription className="text-xs mt-2">
-                      Use the formatting toolbar to style your description
+                      Use the formatting tools to style your description
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -308,7 +286,7 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                         const newIndex = chapterFields.length
                         appendChapter({
                           title: `Chapter ${newIndex + 1}`,
-                          content: "",
+                          content: { blocks: [] },
                         })
                         // Set the new chapter as active
                         setActiveChapter(newIndex.toString())
@@ -326,7 +304,7 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                     type="single"
                     collapsible
                     className="w-full"
-                    value={activeChapter}
+                    value={activeChapter || "0"}
                     onValueChange={setActiveChapter}
                   >
                     {chapterFields.map((field, index) => (
@@ -382,17 +360,11 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                                 <FormLabel className="text-sm">Chapter Content</FormLabel>
                                 <FormControl>
                                   {mounted ? (
-                                    <div className="border rounded-md">
-                                      <ReactQuill
-                                        theme="snow"
-                                        modules={quillModules}
-                                        formats={quillFormats}
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        placeholder="Enter chapter content"
-                                        className="min-h-[200px]"
-                                      />
-                                    </div>
+                                    <TextEditor
+                                      data={field.value}
+                                      onChange={field.onChange}
+                                      placeholder="Enter chapter content"
+                                    />
                                   ) : (
                                     <Textarea
                                       placeholder="Loading editor..."
@@ -402,7 +374,7 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                                   )}
                                 </FormControl>
                                 <FormDescription className="text-xs">
-                                  Use the formatting toolbar to style your chapter content
+                                  Use the formatting tools to style your chapter content
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
@@ -557,4 +529,3 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
     </Form>
   )
 }
-
