@@ -69,7 +69,7 @@ export async function PATCH(
       { $set: updateData },
       { returnDocument: "after" }
     );
-    let updatedArticle = result?.value as ArticleDoc | null;
+    let updatedArticle = result?.value as WithId<ArticleDoc> | null;
     if (!updatedArticle) {
       // Fallback: Lakukan query ulang jika findOneAndUpdate tidak mengembalikan dokumen
       updatedArticle = await db.collection<ArticleDoc>("articles").findOne({ _id: new ObjectId(id) });

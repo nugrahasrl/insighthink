@@ -7,6 +7,7 @@ import clientPromise from "@/lib/mongodb"
 // Configure the route to run on Node.js
 export const revalidate = 0
 
+
 // Define allowed image MIME types
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
 

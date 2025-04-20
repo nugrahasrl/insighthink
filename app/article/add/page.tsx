@@ -19,10 +19,10 @@ import { ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import dynamic from "next/dynamic";
-import "react-quill/dist/quill.snow.css";
+
 
 // Load ReactQuill secara dinamis (client-side only)
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+const TextEditor = dynamic(() => import("@/components/editor-js"), { ssr: false })
 
 export default function AddArticlePage() {
   const router = useRouter();
@@ -142,9 +142,8 @@ export default function AddArticlePage() {
               <Label htmlFor="content" className="block text-sm font-medium">
                 Content
               </Label>
-              {/* Mengganti Textarea dengan ReactQuill agar mendukung formatting */}
-              <ReactQuill
-                id="content"
+              {/* Use TextEditor for content input */}
+              <TextEditor
                 value={formData.content}
                 onChange={(value) =>
                   setFormData((prev) => ({ ...prev, content: value }))
