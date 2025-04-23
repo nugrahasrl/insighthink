@@ -1,9 +1,16 @@
-import type { Metadata } from "next";
+import type React from "react";
 import "./globals.css";
+import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/toaster";
 import { ClientProviders } from "@/components/ClientProviders";
 import { SessionProviderWrapper } from "@/components/session-provider-wrapper";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AppSidebar } from "@/components/app-sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 export const metadata: Metadata = {
   title: "Insighthink",
@@ -17,15 +24,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <ClientProviders>
-          <SessionProviderWrapper>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              {children}
-            </ThemeProvider>
-          </SessionProviderWrapper>
-          <Toaster />
-        </ClientProviders>
+      <body className="min-h-screen bg-background">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset>
+            <ClientProviders>
+              <SessionProviderWrapper>
+                <ThemeProvider
+                  attribute="class"
+                  defaultTheme="system"
+                  enableSystem
+                >
+                  {children}
+                </ThemeProvider>
+              </SessionProviderWrapper>
+              <Toaster />
+            </ClientProviders>
+          </SidebarInset>
+        </SidebarProvider>
       </body>
     </html>
   );

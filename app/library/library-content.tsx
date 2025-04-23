@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Search, X, BookOpen, Plus } from "lucide-react"
-import Link from "next/link"
-import type { BookData } from "@/lib/book"
-import { formatDate, cn } from "@/lib/utils"
+import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, X, BookOpen, Plus } from "lucide-react";
+import Link from "next/link";
+import type { BookData } from "@/lib/book";
+import { formatDate, cn } from "@/lib/utils";
 import {
   Pagination,
   PaginationContent,
@@ -15,52 +15,55 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination"
-import { Skeleton } from "@/components/ui/skeleton"
-import { motion } from "framer-motion"
+} from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
 
 type LibraryContentProps = {
-  initialBooks: BookData[]
-  initialTotalPages: number
-}
+  initialBooks: BookData[];
+  initialTotalPages: number;
+};
 
-export function LibraryContent({ initialBooks, initialTotalPages }: LibraryContentProps) {
-  const [books, setBooks] = useState<BookData[]>(initialBooks)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(initialTotalPages)
-  const [loading, setLoading] = useState(false)
+export function LibraryContent({
+  initialBooks,
+  initialTotalPages,
+}: LibraryContentProps) {
+  const [books, setBooks] = useState<BookData[]>(initialBooks);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (searchQuery === "") {
-      fetchBooks(page)
+      fetchBooks(page);
     }
-  }, [page])
+  }, [page]);
 
   const fetchBooks = async (page: number) => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch(`/api/library?page=${page}&limit=10`)
-      const data = await response.json()
-      setBooks(data.books)
-      setTotalPages(data.totalPages)
+      const response = await fetch(`/api/library?page=${page}&limit=10`);
+      const data = await response.json();
+      setBooks(data.books);
+      setTotalPages(data.totalPages);
     } catch (error) {
-      console.error("Failed to fetch books:", error)
+      console.error("Failed to fetch books:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleClearSearch = () => {
-    setSearchQuery("")
-    fetchBooks(page)
-  }
+    setSearchQuery("");
+    fetchBooks(page);
+  };
 
   const filteredBooks = books.filter(
     (book) =>
       book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+      book.author.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const container = {
     hidden: { opacity: 0 },
@@ -70,12 +73,12 @@ export function LibraryContent({ initialBooks, initialTotalPages }: LibraryConte
         staggerChildren: 0.1,
       },
     },
-  }
+  };
 
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 },
-  }
+  };
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
@@ -102,7 +105,11 @@ export function LibraryContent({ initialBooks, initialTotalPages }: LibraryConte
             </button>
           )}
         </div>
-        <Button size="lg" className="rounded-full px-6 gap-2 min-w-[140px] shadow-sm" asChild>
+        <Button
+          size="lg"
+          className="rounded-full px-6 gap-2 min-w-[140px] shadow-sm"
+          asChild
+        >
           <Link href="/library/add">
             <Plus className="h-4 w-4" />
             Add Book
@@ -134,7 +141,9 @@ export function LibraryContent({ initialBooks, initialTotalPages }: LibraryConte
                 <div className="bg-muted/30 rounded-full p-6 mb-4">
                   <BookOpen className="h-10 w-10 text-muted-foreground" />
                 </div>
-                <h3 className="text-xl font-medium mb-2">{searchQuery ? "No books found" : "Your library is empty"}</h3>
+                <h3 className="text-xl font-medium mb-2">
+                  {searchQuery ? "No books found" : "Your library is empty"}
+                </h3>
                 <p className="text-muted-foreground max-w-md mb-6">
                   {searchQuery
                     ? `We couldn't find any books matching "${searchQuery}". Try a different search term.`
@@ -162,15 +171,25 @@ export function LibraryContent({ initialBooks, initialTotalPages }: LibraryConte
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
+                    size="lg"
                     onClick={() => setPage(page - 1)}
-                    className={cn("transition-all", page === 1 ? "pointer-events-none opacity-50" : "hover:scale-105")}
+                    className={cn(
+                      "transition-all",
+                      page === 1
+                        ? "pointer-events-none opacity-50"
+                        : "hover:scale-105"
+                    )}
                   />
                 </PaginationItem>
 
                 {/* Display first page if applicable */}
                 {page > 2 && (
                   <PaginationItem>
-                    <PaginationLink onClick={() => setPage(1)} className="hover:scale-105 transition-all">
+                    <PaginationLink
+                      size="lg"
+                      onClick={() => setPage(1)}
+                      className="hover:scale-105 transition-all"
+                    >
                       1
                     </PaginationLink>
                   </PaginationItem>
@@ -185,9 +204,13 @@ export function LibraryContent({ initialBooks, initialTotalPages }: LibraryConte
                   .map((p) => (
                     <PaginationItem key={p}>
                       <PaginationLink
+                        size="lg"
                         onClick={() => setPage(p)}
                         isActive={p === page}
-                        className={cn("transition-all", p === page ? "scale-110" : "hover:scale-105")}
+                        className={cn(
+                          "transition-all",
+                          p === page ? "scale-110" : "hover:scale-105"
+                        )}
                       >
                         {p}
                       </PaginationLink>
@@ -200,7 +223,11 @@ export function LibraryContent({ initialBooks, initialTotalPages }: LibraryConte
                 {/* Display last page if applicable */}
                 {page < totalPages - 1 && (
                   <PaginationItem>
-                    <PaginationLink onClick={() => setPage(totalPages)} className="hover:scale-105 transition-all">
+                    <PaginationLink
+                      size="lg"
+                      onClick={() => setPage(totalPages)}
+                      className="hover:scale-105 transition-all"
+                    >
                       {totalPages}
                     </PaginationLink>
                   </PaginationItem>
@@ -208,10 +235,13 @@ export function LibraryContent({ initialBooks, initialTotalPages }: LibraryConte
 
                 <PaginationItem>
                   <PaginationNext
+                    size="lg"
                     onClick={() => setPage(page + 1)}
                     className={cn(
                       "transition-all",
-                      page >= totalPages ? "pointer-events-none opacity-50" : "hover:scale-105",
+                      page >= totalPages
+                        ? "pointer-events-none opacity-50"
+                        : "hover:scale-105"
                     )}
                   />
                 </PaginationItem>
@@ -221,17 +251,19 @@ export function LibraryContent({ initialBooks, initialTotalPages }: LibraryConte
         </>
       )}
     </div>
-  )
+  );
 }
 
 type BookCardProps = {
-  book: BookData
-}
+  book: BookData;
+};
 
 const BookCard = ({ book }: BookCardProps) => {
-  const [imageError, setImageError] = useState(false)
+  const [imageError, setImageError] = useState(false);
   const imageUrl =
-    book.coverImageId && !imageError ? `/api/book-cover/${book.coverImageId}` : "/placeholder.svg?height=300&width=200"
+    book.coverImageId && !imageError
+      ? `/api/book-cover/${book.coverImageId}`
+      : "/placeholder.svg?height=300&width=200";
 
   return (
     <div className="group h-full rounded-xl overflow-hidden bg-background border border-muted/50 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col">
@@ -248,24 +280,31 @@ const BookCard = ({ book }: BookCardProps) => {
         <h3 className="text-lg font-semibold line-clamp-2 group-hover:text-primary transition-colors duration-300">
           {book.title}
         </h3>
-        <p className="text-sm text-muted-foreground line-clamp-1 mb-2">{book.author}</p>
+        <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+          {book.author}
+        </p>
         {book.createdAt && (
-          <p className="text-xs text-muted-foreground mt-auto mb-3">Added on: {formatDate(book.createdAt)}</p>
+          <p className="text-xs text-muted-foreground mt-auto mb-3">
+            Added on: {formatDate(book.createdAt)}
+          </p>
         )}
         <Button
           asChild
           variant="secondary"
           className="w-full mt-auto group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300"
         >
-          <Link href={`/library/${book._id}`} className="flex items-center justify-center gap-2">
+          <Link
+            href={`/library/${book._id}`}
+            className="flex items-center justify-center gap-2"
+          >
             <BookOpen className="h-4 w-4" />
             View Details
           </Link>
         </Button>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const BookCardSkeleton = () => (
   <div className="rounded-xl overflow-hidden bg-background border border-muted/50 shadow-sm flex flex-col h-full">
@@ -277,5 +316,4 @@ const BookCardSkeleton = () => (
       <Skeleton className="h-10 w-full mt-auto" />
     </div>
   </div>
-)
-
+);
