@@ -111,7 +111,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton size="lg" asChild>
               <a href="#">
                 <div className="flex aspect-square items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground">
-                  <div className="size-4" />
+                  <command className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">Insighthink</span>

@@ -1,16 +1,15 @@
-import type React from "react";
+// app/layout.tsx
 import "./globals.css";
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/toaster";
 import { ClientProviders } from "@/components/ClientProviders";
 import { SessionProviderWrapper } from "@/components/session-provider-wrapper";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { LayoutWrapper } from "./LayoutWrapper";
 
 export const metadata: Metadata = {
   title: "Insighthink",
-  description: "A learning platform for self taught learners",
+  description: "A learning platform for self-taught learners",
 };
 
 export default function RootLayout({
@@ -20,14 +19,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-background">
+      <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <ClientProviders>
             <SessionProviderWrapper>
-              <SidebarProvider>
-                <AppSidebar />
-                <SidebarInset>{children}</SidebarInset>
-              </SidebarProvider>
+              <LayoutWrapper>{children}</LayoutWrapper>
             </SessionProviderWrapper>
             <Toaster />
           </ClientProviders>
