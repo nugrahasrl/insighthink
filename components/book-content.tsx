@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { BookData } from "@/lib/book";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { NavigationControls } from "@/components/navigation-controls";
+import dynamic from "next/dynamic";
+
+// Dynamically import our static renderer component
+const EditorJsRenderer = dynamic(
+  () => import("@/components/editor-js-renderer"),
+  { ssr: false }
+);
 
 // Helper functions to get the appropriate class or inline style for the selected font style.
 const getFontClass = (fontStyle: string) => {
@@ -33,9 +40,27 @@ interface BookContentProps {
   fontStyle: string;
 }
 
-export function BookContent({ bookData, fontSize, fontStyle }: BookContentProps) {
+export function BookContent({
+  bookData,
+  fontSize,
+  fontStyle,
+}: BookContentProps) {
+  // State for client-side rendering
+  const [mounted, setMounted] = useState(false);
   // We'll use the chapter index as our page state.
   const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">Loading content...</p>
+      </div>
+    );
+  }
 
   if (!bookData) {
     return (
@@ -103,7 +128,8 @@ export function BookContent({ bookData, fontSize, fontStyle }: BookContentProps)
             >
               {currentChapter.title}
             </h2>
-            {/* Render isi chapter sebagai HTML dengan dangerouslySetInnerHTML */}
+
+            {/* Render chapter content using our static renderer */}
             <div
               className={cn(
                 "prose dark:prose-invert max-w-none",
@@ -117,8 +143,17 @@ export function BookContent({ bookData, fontSize, fontStyle }: BookContentProps)
                 "prose-blockquote:text-muted-foreground",
                 "prose-img:rounded-md"
               )}
-              dangerouslySetInnerHTML={{ __html: currentChapter.content }}
-            />
+            >
+              {typeof currentChapter.content === "object" ? (
+                <EditorJsRenderer data={currentChapter.content} />
+              ) : (
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: currentChapter.content as string,
+                  }}
+                />
+              )}
+            </div>
           </div>
         </div>
       </ScrollArea>

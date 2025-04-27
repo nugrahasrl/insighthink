@@ -1,12 +1,12 @@
-// app/api/library/add/route.ts
+// Update the API route to handle plain text content instead of EditorJS data
 import { NextResponse } from "next/server"
 import { GridFSBucket } from "mongodb"
 import { Buffer } from "buffer"
 import clientPromise from "@/lib/mongodb"
 
 // Configure the route to run on Node.js
-export const revalidate = 0
-
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs"
 
 // Define allowed image MIME types
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
     const book = {
       title,
       author,
-      description,
+      description, // Now plain text or HTML
       content,
       createdAt,
       updatedAt: createdAt,
@@ -221,4 +221,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

@@ -27,7 +27,9 @@ import { Label } from "@/components/ui/label";
 // @import "quill/dist/quill.snow.css";
 
 // Import ReactQuill secara dinamis (client-side only)
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+const TextEditor = dynamic(() => import("@/components/editor-js-renderer"), {
+  ssr: false,
+});
 
 // Definisikan modules secara eksplisit untuk memastikan hanya satu toolbar yang muncul
 const quillModules = {
@@ -146,9 +148,7 @@ export default function AddVideoPage() {
             </div>
             <div>
               <Label htmlFor="summary">Summary</Label>
-              <ReactQuill
-                theme="snow"
-                modules={quillModules}
+              <TextEditor
                 value={summary}
                 onChange={setSummary}
                 placeholder="Write your summary..."

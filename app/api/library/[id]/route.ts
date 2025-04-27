@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server"
-import { ObjectId, GridFSBucket } from "mongodb"
+import { ObjectId } from "mongodb"
+import { GridFSBucket } from "mongodb"
 import { Buffer } from "buffer"
 import clientPromise from "@/lib/mongodb"
 
-// Configure the route to run on Node.js for file handling
+// Configure the route to run on Node.js
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs"
 
 // Define allowed image MIME types
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
@@ -59,10 +62,10 @@ async function uploadFileToGridFS(file: File): Promise<string> {
   return uploadStream.id.toString()
 }
 
-// Helper: Parse string to number or return undefined
+// Perbaiki fungsi parseNumberOrUndefined untuk memastikan konversi string ke number dilakukan dengan benar
 function parseNumberOrUndefined(value: string | null | undefined): number | undefined {
   if (!value) return undefined
-  const parsed = Number.parseInt(value, 10)
+  const parsed = Number(value)
   return isNaN(parsed) ? undefined : parsed
 }
 
@@ -75,199 +78,168 @@ function parseGenres(genresString: string | null | undefined): string[] {
     .filter((genre) => genre.length > 0)
 }
 
-// GET: Fetch a single book by its ID.
+// GET handler to fetch a book by ID
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-  if (!params?.id || typeof params.id !== "string" || !/^[a-fA-F0-9]{24}$/.test(params.id)) {
-    return NextResponse.json({ error: "Invalid book ID format" }, { status: 400 })
-  }
-
   try {
-    const client = await clientPromise
-    const db = client.db("insighthink")
-    const collection = db.collection("library")
-
-    const options = {
-      projection: {
-        _id: 1,
-        title: 1,
-        author: 1,
-        description: 1,
-        content: 1,
-        chapters: 1,
-        keyTerms: 1,
-        coverImageId: 1,
-        image: 1, // legacy field fallback
-        createdAt: 1,
-        updatedAt: 1,
-        genres: 1,
-        pageCount: 1,
-        readingTime: 1,
-      },
+    const { id } = params
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid book ID format" }, { status: 400 })
     }
 
-    const query = { _id: new ObjectId(params.id) }
-    const book = await collection.findOne(query, options)
+    const client = await clientPromise
+    const db = client.db("insighthink")
+    const book = await db.collection("library").findOne({ _id: new ObjectId(id) })
 
     if (!book) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 })
     }
 
-    return NextResponse.json(
-      {
-        _id: book._id.toString(),
-        title: book.title,
-        author: book.author,
-        description: book.description || "",
-        content: book.content || "",
-        chapters: Array.isArray(book.chapters) ? book.chapters : [],
-        keyTerms: Array.isArray(book.keyTerms) ? book.keyTerms : [],
-        coverImageId: book.coverImageId || book.image || "",
-        createdAt: book.createdAt ? new Date(book.createdAt).toISOString() : new Date().toISOString(),
-        updatedAt: book.updatedAt ? new Date(book.updatedAt).toISOString() : new Date().toISOString(),
-        genres: Array.isArray(book.genres) ? book.genres : [],
-        pageCount: book.pageCount || undefined,
-        readingTime: book.readingTime || undefined,
-      },
-      {
-        headers: { "Cache-Control": "public, s-maxage=3600" },
-      },
-    )
+    // Convert _id to string for JSON serialization
+    const responseBook = { ...book, _id: book._id.toString() }
+
+    return NextResponse.json(responseBook)
   } catch (error: any) {
     console.error("Error fetching book:", error)
-    return NextResponse.json({ error: error.message || "Unknown error" }, { status: 500 })
+    return NextResponse.json({ error: error.message || "Failed to fetch book" }, { status: 500 })
   }
 }
 
-// PATCH: Update a book (for editing)
+// PATCH handler to update a book
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  if (!params?.id || typeof params.id !== "string" || !/^[a-fA-F0-9]{24}$/.test(params.id)) {
-    return NextResponse.json({ error: "Invalid book ID format" }, { status: 400 })
-  }
-
   try {
-    // Check if the request is multipart form data or JSON
-    const contentType = request.headers.get("content-type") || ""
-    let data: any
-    let coverImage: File | null = null
+    const { id } = params
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid book ID format" }, { status: 400 })
+    }
 
-    if (contentType.includes("multipart/form-data")) {
-      // Handle multipart form data (with file uploads)
-      const formData = await request.formData()
+    // Parse the incoming form data
+    const formData = await request.formData()
 
-      // Extract form fields
-      data = {
-        title: formData.get("title")?.toString(),
-        author: formData.get("author")?.toString(),
-        description: formData.get("description")?.toString(),
-        content: formData.get("content")?.toString(),
-        pageCountStr: formData.get("pageCount")?.toString(),
-        readingTimeStr: formData.get("readingTime")?.toString(),
-        genresStr: formData.get("genres")?.toString(),
-      }
+    console.log("Received form data for update:", Object.fromEntries(formData.entries()))
 
-      // Extract chapters and keyTerms if present
-      const chaptersStr = formData.get("chapters")?.toString()
-      const keyTermsStr = formData.get("keyTerms")?.toString()
+    // Extract fields
+    const title = formData.get("title")?.toString()
+    const author = formData.get("author")?.toString()
 
+    // Validate required fields
+    if (!title || !author) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Title and author are required fields",
+        },
+        { status: 400 },
+      )
+    }
+
+    // Extract optional fields
+    const description = formData.get("description")?.toString() || ""
+    const content = formData.get("content")?.toString() || ""
+    const pageCountStr = formData.get("pageCount")?.toString()
+    const readingTimeStr = formData.get("readingTime")?.toString()
+    const genresStr = formData.get("genres")?.toString()
+
+    // Parse numeric fields
+    const pageCount = parseNumberOrUndefined(pageCountStr)
+    const readingTime = parseNumberOrUndefined(readingTimeStr)
+
+    console.log("Parsed numeric fields:", { pageCount, readingTime, pageCountStr, readingTimeStr })
+
+    // Parse genres into array
+    const genres = parseGenres(genresStr)
+
+    // Extract and parse chapters and keyTerms (expected as JSON strings)
+    const chaptersStr = formData.get("chapters")?.toString()
+    const keyTermsStr = formData.get("keyTerms")?.toString()
+
+    let chaptersParsed: any[] = []
+    let keyTermsParsed: any[] = []
+
+    try {
       if (chaptersStr) {
-        try {
-          data.chapters = JSON.parse(chaptersStr)
-        } catch (err) {
-          console.error("Error parsing chapters:", err)
-          data.chapters = []
-        }
+        chaptersParsed = JSON.parse(chaptersStr)
       }
+    } catch (err) {
+      console.error("Error parsing chapters:", err)
+    }
 
+    try {
       if (keyTermsStr) {
-        try {
-          data.keyTerms = JSON.parse(keyTermsStr)
-        } catch (err) {
-          console.error("Error parsing keyTerms:", err)
-          data.keyTerms = []
-        }
+        keyTermsParsed = JSON.parse(keyTermsStr)
       }
-
-      // Get the cover image file if provided
-      coverImage = (formData.get("coverImage") as File) || null
-    } else {
-      // Handle JSON data
-      data = await request.json()
+    } catch (err) {
+      console.error("Error parsing keyTerms:", err)
     }
 
-    // Build the update object
-    const updateData: any = {
-      updatedAt: new Date(),
-    }
+    // Process the cover image file, if provided
+    let coverImageId = undefined
+    const coverImage = formData.get("coverImage")
 
-    // Set basic fields if provided
-    if (data.title !== undefined) updateData.title = data.title
-    if (data.author !== undefined) updateData.author = data.author
-    if (data.description !== undefined) updateData.description = data.description
-    if (data.content !== undefined) updateData.content = data.content
-
-    // Handle arrays
-    if (data.chapters !== undefined) {
-      updateData.chapters = Array.isArray(data.chapters) ? data.chapters : []
-    }
-
-    if (data.keyTerms !== undefined) {
-      updateData.keyTerms = Array.isArray(data.keyTerms) ? data.keyTerms : []
-    }
-
-    // Handle new fields
-    if (data.pageCountStr !== undefined || data.pageCount !== undefined) {
-      const pageCountValue = data.pageCountStr || data.pageCount
-      updateData.pageCount = parseNumberOrUndefined(pageCountValue?.toString())
-    }
-
-    if (data.readingTimeStr !== undefined || data.readingTime !== undefined) {
-      const readingTimeValue = data.readingTimeStr || data.readingTime
-      updateData.readingTime = parseNumberOrUndefined(readingTimeValue?.toString())
-    }
-
-    if (data.genresStr !== undefined || data.genres !== undefined) {
-      const genresValue = data.genresStr || data.genres
-      if (typeof genresValue === "string") {
-        updateData.genres = parseGenres(genresValue)
-      } else if (Array.isArray(genresValue)) {
-        updateData.genres = genresValue
-      }
-    }
-
-    // Handle cover image upload if provided
     if (coverImage && coverImage instanceof File && coverImage.size > 0) {
       try {
-        const coverImageId = await uploadFileToGridFS(coverImage)
-        updateData.coverImageId = coverImageId
+        coverImageId = await uploadFileToGridFS(coverImage)
+        console.log("Uploaded new cover image with ID:", coverImageId)
       } catch (error: any) {
-        return NextResponse.json({ success: false, message: `Cover image error: ${error.message}` }, { status: 400 })
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Cover image error: ${error.message}`,
+          },
+          { status: 400 },
+        )
       }
-    } else if (data.coverImageId !== undefined && data.coverImageId !== "") {
-      updateData.coverImageId = data.coverImageId
     }
 
+    // Build the update document
+    const updateDoc: any = {
+      title,
+      author,
+      description,
+      content,
+      updatedAt: new Date().toISOString(),
+      chapters: Array.isArray(chaptersParsed) ? chaptersParsed : [],
+      keyTerms: keyTermsParsed,
+      pageCount,
+      readingTime,
+      genres,
+    }
+
+    // Only include coverImageId if a new image was uploaded
+    if (coverImageId) {
+      updateDoc.coverImageId = coverImageId
+    }
+
+    console.log("Updating book with data:", updateDoc)
+
+    // Update the book in the database
     const client = await clientPromise
     const db = client.db("insighthink")
-    const collection = db.collection("library")
-
-    const result = await collection.updateOne({ _id: new ObjectId(params.id) }, { $set: updateData })
+    const result = await db.collection("library").updateOne({ _id: new ObjectId(id) }, { $set: updateDoc })
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ success: false, message: "Book not found" }, { status: 404 })
     }
 
+    // Fetch the updated book
+    const updatedBook = await db.collection("library").findOne({ _id: new ObjectId(id) })
+    if (!updatedBook) {
+      return NextResponse.json({ success: false, message: "Failed to fetch updated book" }, { status: 500 })
+    }
+
+    // Convert _id to string for JSON serialization
+    updatedBook._idString = updatedBook._id.toString()
+
     return NextResponse.json({
       success: true,
       message: "Book updated successfully",
-      bookId: params.id,
-      updatedAt: updateData.updatedAt,
+      book: updatedBook,
     })
   } catch (error: any) {
     console.error("Error updating book:", error)
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Unknown error",
+        message: error.message || "An unexpected error occurred while updating the book",
         error: process.env.NODE_ENV === "development" ? error.stack : undefined,
       },
       { status: 500 },
@@ -275,52 +247,54 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-// DELETE: Remove a book
+// DELETE handler to delete a book
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  if (!params?.id || typeof params.id !== "string" || !/^[a-fA-F0-9]{24}$/.test(params.id)) {
-    return NextResponse.json({ error: "Invalid book ID format" }, { status: 400 })
-  }
-
   try {
+    const { id } = params
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid book ID format" }, { status: 400 })
+    }
+
     const client = await clientPromise
     const db = client.db("insighthink")
-    const collection = db.collection("library")
 
-    // First, get the book to check if it has a cover image
-    const book = await collection.findOne({ _id: new ObjectId(params.id) }, { projection: { coverImageId: 1 } })
+    // Get the book first to check if it exists and to get the coverImageId
+    const book = await db.collection("library").findOne({ _id: new ObjectId(id) })
 
     if (!book) {
       return NextResponse.json({ success: false, message: "Book not found" }, { status: 404 })
     }
 
-    // Delete the book
-    const result = await collection.deleteOne({ _id: new ObjectId(params.id) })
-
-    // If the book had a cover image, delete it from GridFS
+    // Jika buku memiliki cover image, hapus dari GridFS
     if (book.coverImageId) {
       try {
         const bucket = new GridFSBucket(db, { bucketName: "images" })
         await bucket.delete(new ObjectId(book.coverImageId))
       } catch (error) {
         console.error("Error deleting cover image:", error)
-        // Continue even if image deletion fails
+        // Lanjutkan meskipun penghapusan gambar gagal
       }
+    }
+
+    // Delete the book
+    const result = await db.collection("library").deleteOne({ _id: new ObjectId(id) })
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ success: false, message: "Failed to delete book" }, { status: 500 })
     }
 
     return NextResponse.json({
       success: true,
       message: "Book deleted successfully",
-      bookId: params.id,
     })
   } catch (error: any) {
     console.error("Error deleting book:", error)
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Unknown error",
+        message: error.message || "An unexpected error occurred while deleting the book",
       },
       { status: 500 },
     )
   }
 }
-

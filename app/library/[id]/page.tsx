@@ -15,10 +15,12 @@ import {
   Share2,
   ArrowLeft,
   BookX,
+  Edit,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { BookDescription } from "@/components/book-description"; // We'll create this component
 
-export default async function ReadBookPage({
+export default async function BookDetailPage({
   params,
 }: {
   params: { id: string };
@@ -71,6 +73,16 @@ export default async function ReadBookPage({
           { label: "Library", href: "/library", icon: BookOpen },
           { label: book.title, active: true },
         ]}
+        rightContent={
+          <div className="flex gap-2">
+            <Button asChild variant="outline" size="sm" className="gap-1">
+              <Link href={`/library/${book._id}/edit`}>
+                <Edit className="h-4 w-4" />
+                <span className="hidden sm:inline">Edit</span>
+              </Link>
+            </Button>
+          </div>
+        }
       />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -133,7 +145,7 @@ export default async function ReadBookPage({
                   </Card>
                 )}
 
-                {book.pageCount && (
+                {book.pageCount && book.pageCount > 0 && (
                   <Card className="bg-muted/20 border-none">
                     <CardContent className="p-3 flex items-center gap-2">
                       <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -142,7 +154,7 @@ export default async function ReadBookPage({
                   </Card>
                 )}
 
-                {book.readingTime && (
+                {book.readingTime && book.readingTime > 0 && (
                   <Card className="bg-muted/20 border-none">
                     <CardContent className="p-3 flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
@@ -158,10 +170,9 @@ export default async function ReadBookPage({
 
               <div>
                 <h2 className="text-xl font-semibold mb-4">About this book</h2>
-                <div
-                  className="prose dark:prose-invert prose-img:rounded-xl prose-headings:font-semibold prose-a:text-primary max-w-none"
-                  dangerouslySetInnerHTML={{ __html: book.description }}
-                />
+                <div className="prose dark:prose-invert prose-img:rounded-xl prose-headings:font-semibold prose-a:text-primary max-w-none">
+                  <BookDescription description={book.description} />
+                </div>
               </div>
 
               <Separator />

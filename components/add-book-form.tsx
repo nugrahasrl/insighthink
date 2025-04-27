@@ -1,39 +1,64 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { useForm, useFieldArray } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { BookOpen, Upload, FileText, Info, BookText, Hash, Plus, Trash2, FilePlus2 } from "lucide-react"
-import Link from "next/link"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { cn } from "@/lib/utils"
-import dynamic from "next/dynamic"
-
-// Dynamically import TextEditor to avoid SSR issues
-const TextEditor = dynamic(() => import("@/components/editor-js"), { ssr: false })
+import { useState } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  BookOpen,
+  Upload,
+  FileText,
+  Info,
+  BookText,
+  Hash,
+  Plus,
+  Trash2,
+  FilePlus2,
+} from "lucide-react";
+import Link from "next/link";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { cn } from "@/lib/utils";
 
 // Define the form schema with Zod
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   author: z.string().min(1, "Author is required"),
-  description: z.any().optional(), // Changed to any to accommodate EditorJS data
+  description: z.string().optional(), // Using string for description instead of EditorJS data
   coverImage: z.any().optional(),
   chapters: z
     .array(
       z.object({
         title: z.string().min(1, "Chapter title is required"),
-        content: z.any().optional(), // Changed to any to accommodate EditorJS data
-      }),
+        content: z.string().optional(), // Using string for content instead of EditorJS data
+      })
     )
     .optional(),
   keyTerms: z
@@ -41,32 +66,28 @@ const formSchema = z.object({
       z.object({
         term: z.string().min(1, "Term is required"),
         definition: z.string().min(1, "Definition is required"),
-      }),
+      })
     )
     .optional(),
   pageCount: z.string().optional(),
   readingTime: z.string().optional(),
   genres: z.string().optional(),
-})
+});
 
 // Define the form values type
-export type BookFormValues = z.infer<typeof formSchema>
+export type BookFormValues = z.infer<typeof formSchema>;
 
 interface AddBookFormProps {
-  onSubmit: (data: BookFormValues) => void
-  isSubmitting: boolean
+  onSubmit: (data: BookFormValues) => void;
+  isSubmitting: boolean;
 }
 
 export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
-  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null)
-  const [fileName, setFileName] = useState<string | null>(null)
-  const [activeChapter, setActiveChapter] = useState<string | null>("0")
-  const [mounted, setMounted] = useState(false)
-
-  // Ensure component has rendered on client
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
+    null
+  );
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [activeChapter, setActiveChapter] = useState<string | null>("0");
 
   // Initialize the form
   const form = useForm<BookFormValues>({
@@ -74,14 +95,14 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
     defaultValues: {
       title: "",
       author: "",
-      description: { blocks: [] },
-      chapters: [{ title: "Chapter 1", content: { blocks: [] } }],
+      description: "",
+      chapters: [{ title: "Chapter 1", content: "" }],
       keyTerms: [{ term: "", definition: "" }],
       pageCount: "",
       readingTime: "",
       genres: "",
     },
-  })
+  });
 
   // Set up field arrays for chapters and key terms
   const {
@@ -91,7 +112,7 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
   } = useFieldArray({
     control: form.control,
     name: "chapters",
-  })
+  });
 
   const {
     fields: keyTermFields,
@@ -100,23 +121,23 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
   } = useFieldArray({
     control: form.control,
     name: "keyTerms",
-  })
+  });
 
   // Handle file input change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      form.setValue("coverImage", file)
-      setFileName(file.name)
+      form.setValue("coverImage", file);
+      setFileName(file.name);
 
       // Create a preview URL
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setCoverImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
+        setCoverImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   return (
     <Form {...form}>
@@ -149,7 +170,11 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                         Title <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter book title" {...field} className="h-10" />
+                        <Input
+                          placeholder="Enter book title"
+                          {...field}
+                          className="h-10"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -165,7 +190,11 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                         Author <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter author name" {...field} className="h-10" />
+                        <Input
+                          placeholder="Enter author name"
+                          {...field}
+                          className="h-10"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -179,9 +208,15 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                     <FormItem>
                       <FormLabel className="text-base">Genres</FormLabel>
                       <FormControl>
-                        <Input placeholder="Fiction, Fantasy, Science Fiction, etc." {...field} className="h-10" />
+                        <Input
+                          placeholder="Fiction, Fantasy, Science Fiction, etc."
+                          {...field}
+                          className="h-10"
+                        />
                       </FormControl>
-                      <FormDescription className="text-xs">Separate genres with commas</FormDescription>
+                      <FormDescription className="text-xs">
+                        Separate genres with commas
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -214,7 +249,9 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={() => document.getElementById("coverImage")?.click()}
+                            onClick={() =>
+                              document.getElementById("coverImage")?.click()
+                            }
                             className="gap-2"
                           >
                             <Upload className="h-4 w-4" />
@@ -222,7 +259,9 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                           </Button>
 
                           {fileName && (
-                            <p className="text-sm text-muted-foreground truncate max-w-[200px] mx-auto">{fileName}</p>
+                            <p className="text-sm text-muted-foreground truncate max-w-[200px] mx-auto">
+                              {fileName}
+                            </p>
                           )}
 
                           <Input
@@ -233,7 +272,9 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                             onChange={handleFileChange}
                           />
 
-                          <p className="text-xs text-muted-foreground">JPG, PNG or WebP, max 5MB</p>
+                          <p className="text-xs text-muted-foreground">
+                            JPG, PNG or WebP, max 5MB
+                          </p>
                         </div>
                       </CardContent>
                     </Card>
@@ -250,20 +291,19 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base">Book Description</FormLabel>
+                    <FormLabel className="text-base">
+                      Book Description
+                    </FormLabel>
                     <FormControl>
-                      {mounted ? (
-                        <TextEditor
-                          data={field.value}
-                          onChange={field.onChange}
-                          placeholder="Write your book description..."
-                        />
-                      ) : (
-                        <Textarea placeholder="Loading editor..." className="min-h-[200px] resize-y" disabled />
-                      )}
+                      <Textarea
+                        {...field}
+                        placeholder="Write your book description..."
+                        className="min-h-[200px] resize-y"
+                      />
                     </FormControl>
                     <FormDescription className="text-xs mt-2">
-                      Use the formatting tools to style your description
+                      Describe your book in detail. You can use HTML for
+                      formatting if needed.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -283,13 +323,13 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const newIndex = chapterFields.length
+                        const newIndex = chapterFields.length;
                         appendChapter({
                           title: `Chapter ${newIndex + 1}`,
-                          content: { blocks: [] },
-                        })
+                          content: "",
+                        });
                         // Set the new chapter as active
-                        setActiveChapter(newIndex.toString())
+                        setActiveChapter(newIndex.toString());
                       }}
                       className="h-8 gap-1"
                     >
@@ -297,7 +337,9 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                       Add Chapter
                     </Button>
                   </CardTitle>
-                  <CardDescription>Add chapters and their content to your book</CardDescription>
+                  <CardDescription>
+                    Add chapters and their content to your book
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Accordion
@@ -313,12 +355,16 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                         value={index.toString()}
                         className={cn(
                           "border rounded-md px-1 mb-3",
-                          activeChapter === index.toString() ? "border-primary/30 bg-muted/30" : "border-border",
+                          activeChapter === index.toString()
+                            ? "border-primary/30 bg-muted/30"
+                            : "border-border"
                         )}
                       >
                         <AccordionTrigger className="px-3 py-2 hover:no-underline">
                           <div className="flex items-center gap-2 w-full">
-                            <span className="font-medium">{`Chapter ${index + 1}`}</span>
+                            <span className="font-medium">{`Chapter ${
+                              index + 1
+                            }`}</span>
                             <FormField
                               control={form.control}
                               name={`chapters.${index}.title`}
@@ -337,10 +383,13 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => {
-                                  e.stopPropagation()
-                                  removeChapter(index)
-                                  if (activeChapter === index.toString() && index > 0) {
-                                    setActiveChapter((index - 1).toString())
+                                  e.stopPropagation();
+                                  removeChapter(index);
+                                  if (
+                                    activeChapter === index.toString() &&
+                                    index > 0
+                                  ) {
+                                    setActiveChapter((index - 1).toString());
                                   }
                                 }}
                                 className="ml-auto h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
@@ -357,24 +406,19 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                             name={`chapters.${index}.content`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm">Chapter Content</FormLabel>
+                                <FormLabel className="text-sm">
+                                  Chapter Content
+                                </FormLabel>
                                 <FormControl>
-                                  {mounted ? (
-                                    <TextEditor
-                                      data={field.value}
-                                      onChange={field.onChange}
-                                      placeholder="Enter chapter content"
-                                    />
-                                  ) : (
-                                    <Textarea
-                                      placeholder="Loading editor..."
-                                      className="min-h-[200px] resize-y"
-                                      disabled
-                                    />
-                                  )}
+                                  <Textarea
+                                    {...field}
+                                    placeholder="Enter chapter content"
+                                    className="min-h-[200px] resize-y"
+                                  />
                                 </FormControl>
                                 <FormDescription className="text-xs">
-                                  Use the formatting tools to style your chapter content
+                                  Write your chapter content. You can use HTML
+                                  for formatting if needed.
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
@@ -399,19 +443,26 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => appendKeyTerm({ term: "", definition: "" })}
+                      onClick={() =>
+                        appendKeyTerm({ term: "", definition: "" })
+                      }
                       className="h-8 gap-1"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       Add Term
                     </Button>
                   </CardTitle>
-                  <CardDescription>Add key terms and their definitions</CardDescription>
+                  <CardDescription>
+                    Add key terms and their definitions
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {keyTermFields.map((field, index) => (
-                      <div key={field.id} className="flex flex-col gap-3 p-3 border rounded-md relative">
+                      <div
+                        key={field.id}
+                        className="flex flex-col gap-3 p-3 border rounded-md relative"
+                      >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <FormField
                             control={form.control}
@@ -420,7 +471,11 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                               <FormItem>
                                 <FormLabel className="text-sm">Term</FormLabel>
                                 <FormControl>
-                                  <Input {...field} placeholder="Enter term" className="h-9" />
+                                  <Input
+                                    {...field}
+                                    placeholder="Enter term"
+                                    className="h-9"
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -431,9 +486,15 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                             name={`keyTerms.${index}.definition`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm">Definition</FormLabel>
+                                <FormLabel className="text-sm">
+                                  Definition
+                                </FormLabel>
                                 <FormControl>
-                                  <Input {...field} placeholder="Enter definition" className="h-9" />
+                                  <Input
+                                    {...field}
+                                    placeholder="Enter definition"
+                                    className="h-9"
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -469,7 +530,12 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                   <FormItem>
                     <FormLabel className="text-base">Page Count</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="Number of pages" {...field} className="h-10" />
+                      <Input
+                        type="number"
+                        placeholder="Number of pages"
+                        {...field}
+                        className="h-10"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -481,9 +547,16 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                 name="readingTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base">Reading Time (minutes)</FormLabel>
+                    <FormLabel className="text-base">
+                      Reading Time (minutes)
+                    </FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="Estimated reading time" {...field} className="h-10" />
+                      <Input
+                        type="number"
+                        placeholder="Estimated reading time"
+                        {...field}
+                        className="h-10"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -499,7 +572,11 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
           <Button type="button" variant="outline" asChild>
             <Link href="/library">Cancel</Link>
           </Button>
-          <Button type="submit" disabled={isSubmitting} className="gap-2 min-w-[120px]">
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="gap-2 min-w-[120px]"
+          >
             {isSubmitting ? (
               <>
                 <svg
@@ -508,7 +585,14 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
                   fill="none"
                   viewBox="0 0 24 24"
                 >
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
                   <path
                     className="opacity-75"
                     fill="currentColor"
@@ -527,5 +611,5 @@ export function AddBookForm({ onSubmit, isSubmitting }: AddBookFormProps) {
         </div>
       </form>
     </Form>
-  )
+  );
 }
