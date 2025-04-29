@@ -20,10 +20,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import dynamic from "next/dynamic";
-import "react-quill/dist/quill.snow.css";
+import type EditorJS from "@editorjs/editorjs";
 
-// Import ReactQuill secara dinamis (client-side only)
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+// Import editor secara dinamis (client-side only)
+const EditorJSRenderer = dynamic(() => import("@/components/editor-js-renderer"), { 
+  ssr: false,
+  loading: () => <div className="h-64 border rounded-md p-3 bg-muted">Loading editor...</div>
+});
 
 interface ArticleData {
   _id: string;
@@ -65,6 +68,14 @@ export default function EditArticlePage() {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  // Handler untuk update content dari EditorJS
+  const handleEditorChange = (newContent: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      content: newContent,
     }));
   };
 
@@ -208,15 +219,11 @@ export default function EditArticlePage() {
               <Label htmlFor="content" className="block text-sm font-medium">
                 Content
               </Label>
-              {/* Mengganti Textarea dengan ReactQuill untuk mendukung formatting */}
-              <ReactQuill
-                value={formData.content}
-                onChange={(value) =>
-                  setFormData((prev) => ({ ...prev, content: value }))
-                }
-                placeholder="Article Content (HTML allowed)"
-                className="mt-1"
-              />
+              <div className="mt-1 border rounded-md">
+                <EditorJSRenderer
+                  data={formData.content}
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="author" className="block text-sm font-medium">

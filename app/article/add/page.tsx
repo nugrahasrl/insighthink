@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -17,12 +21,25 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import dynamic from "next/dynamic";
 
+// Definisikan interface untuk EditorJS component
+interface EditorProps {
+  data?: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+}
 
-// Load ReactQuill secara dinamis (client-side only)
-const TextEditor = dynamic(() => import("@/components/editor-js"), { ssr: false })
+// Load EditorJS secara dinamis (client-side only)
+const EditorJSRenderer = dynamic(() => import("@/components/editor-js"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 border rounded-md p-3 bg-muted">Loading editor...</div>
+  ),
+});
 
 export default function AddArticlePage() {
   const router = useRouter();
@@ -39,9 +56,19 @@ export default function AddArticlePage() {
     references: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handler untuk update content dari EditorJS
+  const handleEditorChange = (newContent: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      content: newContent,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,8 +78,11 @@ export default function AddArticlePage() {
     setSuccess("");
 
     try {
-      // Parse references dari comma-separated string ke array
-      const refs = formData.references.split(",").map((r) => r.trim()).filter((r) => r);
+      // Parse references dari newline-separated string ke array
+      const refs = formData.references
+        .split(/\r?\n/)
+        .map((r) => r.trim())
+        .filter((r) => r);
       const payload = { ...formData, references: refs };
 
       const res = await fetch("/api/articles", {
@@ -90,7 +120,7 @@ export default function AddArticlePage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  <BreadcrumbLink href="/article">Articles</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
@@ -126,31 +156,32 @@ export default function AddArticlePage() {
               />
             </div>
             <div>
-              <Label htmlFor="description" className="block text-sm font-medium">
+              <Label
+                htmlFor="description"
+                className="block text-sm font-medium"
+              >
                 Description
               </Label>
-              <textarea
+              <Textarea
                 id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Brief description"
-                className="mt-1 block w-full rounded border border-gray-300 p-2"
+                className="mt-1"
               />
             </div>
             <div>
               <Label htmlFor="content" className="block text-sm font-medium">
                 Content
               </Label>
-              {/* Use TextEditor for content input */}
-              <TextEditor
-                value={formData.content}
-                onChange={(value) =>
-                  setFormData((prev) => ({ ...prev, content: value }))
-                }
-                placeholder="Article content (HTML allowed)"
-                className="mt-1 rounded-sm"
-              />
+              <div className="mt-1 border rounded-md">
+                <EditorJSRenderer
+                  data={formData.content}
+                  onChange={handleEditorChange}
+                  placeholder="Write your article content here..."
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="author" className="block text-sm font-medium">
@@ -184,26 +215,26 @@ export default function AddArticlePage() {
               <Label htmlFor="excerpt" className="block text-sm font-medium">
                 Excerpt
               </Label>
-              <textarea
+              <Textarea
                 id="excerpt"
                 name="excerpt"
                 value={formData.excerpt}
                 onChange={handleChange}
                 placeholder="Short excerpt"
-                className="mt-1 block w-full rounded border border-gray-300 p-2"
+                className="mt-1"
               />
             </div>
             <div>
               <Label htmlFor="references" className="block text-sm font-medium">
-                References (comma-separated)
+                References (one per line)
               </Label>
-              <textarea
+              <Textarea
                 id="references"
                 name="references"
                 value={formData.references}
                 onChange={handleChange}
-                placeholder="Reference 1, Reference 2, Reference 3"
-                className="mt-1 block w-full rounded border border-gray-300 p-2"
+                placeholder="Enter one reference per line"
+                className="mt-1"
               />
             </div>
             <Button type="submit" disabled={isSubmitting}>

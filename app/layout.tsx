@@ -1,15 +1,10 @@
-// app/layout.tsx
-import "./globals.css";
+import type React from "react";
 import type { Metadata } from "next";
-import { Toaster } from "@/components/ui/toaster";
-import { ClientProviders } from "@/components/ClientProviders";
-import { SessionProviderWrapper } from "@/components/session-provider-wrapper";
-import { ThemeProvider } from "@/components/theme-provider";
-import { LayoutWrapper } from "./LayoutWrapper";
+import ClientRootLayout from "./ClientRootLayout";
 
 export const metadata: Metadata = {
   title: "Insighthink",
-  description: "A learning platform for self-taught learners",
+  description: "A learning platform for self taught learners",
 };
 
 export default function RootLayout({
@@ -19,16 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <ClientProviders>
-            <SessionProviderWrapper>
-              <LayoutWrapper>{children}</LayoutWrapper>
-            </SessionProviderWrapper>
-            <Toaster />
-          </ClientProviders>
-        </ThemeProvider>
-      </body>
+      <ClientRootLayout>{children}</ClientRootLayout>
     </html>
   );
 }
