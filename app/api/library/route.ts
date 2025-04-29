@@ -2,11 +2,13 @@ import clientPromise from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Handle pagination with validation
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "8", 10)));
@@ -21,7 +23,7 @@ export async function GET(request: Request) {
         return new Date().toISOString()
       }
     }
-    
+
     // Parallelize count and data fetching
     const [totalBooks, books] = await Promise.all([
       db.collection("library").countDocuments(),
@@ -47,10 +49,10 @@ export async function GET(request: Request) {
 
     const transformedBooks = books.map((book) => {
       // Handle createdAt conversion
-      const createdAt = book.createdAt 
-        ? new Date(book.createdAt).toISOString() 
+      const createdAt = book.createdAt
+        ? new Date(book.createdAt).toISOString()
         : new Date().toISOString();
-    
+
       return {
         _id: book._id.toString(),
         title: book.title || "",
@@ -70,8 +72,8 @@ export async function GET(request: Request) {
       currentPage: page,
       totalPages: Math.ceil(totalBooks / limit),
     }, {
-      headers: { 
-        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" 
+      headers: {
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400"
       },
     });
   } catch (error: any) {

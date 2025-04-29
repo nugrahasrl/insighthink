@@ -5,18 +5,13 @@ if (!uri) {
   throw new Error("Please define the MONGODB_URI environment variable");
 }
 
-const options = {
-  tls: true,
-  // For testing only - do not use in production!
-  tlsAllowInvalidCertificates: true,
-};
+const options = {}; // tidak perlu TLS setting manual
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 // Extend the global type definitions to include _mongoClientPromise
 declare global {
-  // eslint-disable-next-line no-var
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 

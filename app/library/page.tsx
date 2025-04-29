@@ -20,7 +20,7 @@ export default function LibraryPage() {
         setLoading(true);
         console.log(`Fetching books for page ${currentPage}...`);
         const response = await fetch(
-          `http://localhost:3000/api/library?page=${currentPage}&limit=${booksPerPage}`
+          `/api/library?page=${currentPage}&limit=${booksPerPage}`
         );
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
