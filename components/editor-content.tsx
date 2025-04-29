@@ -29,13 +29,17 @@ export default function EditorContent({ data }: EditorContentProps) {
 
           case "list":
             const ListTag = block.data.style === "ordered" ? "ol" : "ul";
-            return (
+            // Tambahkan pemeriksaan untuk memastikan block.data.items adalah array
+            const items = Array.isArray(block.data.items)
+              ? block.data.items
+              : [];
+            return items.length > 0 ? (
               <ListTag key={index}>
-                {block.data.items.map((item: string, i: number) => (
+                {items.map((item: string, i: number) => (
                   <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
                 ))}
               </ListTag>
-            );
+            ) : null;
 
           case "image":
             return (
