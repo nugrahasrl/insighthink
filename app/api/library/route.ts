@@ -14,6 +14,13 @@ export async function GET(request: Request) {
 
     const client = await clientPromise;
     const db = client.db("insighthink");
+    const safeDateConverter = (date: any) => {
+      try {
+        return new Date(date).toISOString()
+      } catch {
+        return new Date().toISOString()
+      }
+    }
     
     // Parallelize count and data fetching
     const [totalBooks, books] = await Promise.all([
@@ -38,17 +45,24 @@ export async function GET(request: Request) {
         .toArray()
     ]);
 
-    const transformedBooks = books.map((book) => ({
-      _id: book._id.toString(),
-      title: book.title || "",
-      author: book.author || "",
-      description: book.description || "",
-      content: book.content || "",
-      chapters: Array.isArray(book.chapters) ? book.chapters : [],
-      keyTerms: Array.isArray(book.keyTerms) ? book.keyTerms : [],
-      coverImageId: (book.coverImageId || book.image || "").toString(),
-      createdAt: book.createdAt?.toISOString() || new Date().toISOString(),
-    }));
+    const transformedBooks = books.map((book) => {
+      // Handle createdAt conversion
+      const createdAt = book.createdAt 
+        ? new Date(book.createdAt).toISOString() 
+        : new Date().toISOString();
+    
+      return {
+        _id: book._id.toString(),
+        title: book.title || "",
+        author: book.author || "",
+        description: book.description || "",
+        content: book.content || "",
+        chapters: Array.isArray(book.chapters) ? book.chapters : [],
+        keyTerms: Array.isArray(book.keyTerms) ? book.keyTerms : [],
+        coverImageId: (book.coverImageId || book.image || "").toString(),
+        createdAt: safeDateConverter(book.createdAt), // 👈️ Gunakan hasil konversi
+      };
+    });
 
     return NextResponse.json({
       books: transformedBooks,
