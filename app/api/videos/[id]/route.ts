@@ -1,23 +1,26 @@
-import { NextResponse } from "next/server"
-import formidable from "formidable"
-import fs from "fs"
-import path from "path"
-import { Readable } from "stream"
-import type { IncomingMessage } from "http"
-import { ObjectId } from "mongodb"
-import clientPromise from "@/lib/mongodb"
-import type { VideoData } from "@/lib/video-types"
+// --- Next.js API Route Settings ---
+export const dynamic = "force-dynamic"; // Disable caching
+export const runtime = "nodejs"; // Needed for fs, formidable, etc.
+// export const sizeLimit = "10mb"; // (Optional) max request body size
 
-const hexRegex = /^[0-9a-fA-F]{24}$/
-
-// Replace the old config object with these individual exports
-export const dynamic = "force-dynamic" // Equivalent to revalidate: 0
-export const runtime = "nodejs" // Using Node.js runtime since you're using fs
+// --- Imports ---
+import { NextResponse } from "next/server";
+import formidable from "formidable";
+import fs from "fs";
+import path from "path";
+import { Readable } from "stream";
+import type { IncomingMessage } from "http";
+import { ObjectId } from "mongodb";
+import clientPromise from "@/lib/mongodb";
+import type { VideoData } from "@/lib/video-types";
 
 const uploadDir = path.join(process.cwd(), "public/uploads/videos")
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true })
 }
+
+// Regex to validate a 24-character hex string (MongoDB ObjectId)
+const hexRegex = /^[a-fA-F0-9]{24}$/
 
 // Helper: jika field adalah string, kembalikan nilainya; jika array, kembalikan elemen pertama; jika tidak, kembalikan fallback
 function getStringField(field: any, fallback: string): string {
@@ -31,13 +34,13 @@ async function parseFormData(request: Request) {
   const fakeReq = new Readable()
   fakeReq.push(buf)
   fakeReq.push(null)
-  ;(fakeReq as any).headers = Object.fromEntries(request.headers.entries())
-  ;(fakeReq as any).method = request.method
-  ;(fakeReq as any).url = request.url
-  ;(fakeReq as any).aborted = false
-  ;(fakeReq as any).httpVersion = "1.1"
-  ;(fakeReq as any).httpVersionMajor = 1
-  ;(fakeReq as any).httpVersionMinor = 1
+    ; (fakeReq as any).headers = Object.fromEntries(request.headers.entries())
+    ; (fakeReq as any).method = request.method
+    ; (fakeReq as any).url = request.url
+    ; (fakeReq as any).aborted = false
+    ; (fakeReq as any).httpVersion = "1.1"
+    ; (fakeReq as any).httpVersionMajor = 1
+    ; (fakeReq as any).httpVersionMinor = 1
 
   return new Promise<{ fields: any; files: any }>((resolve, reject) => {
     const form = formidable({
